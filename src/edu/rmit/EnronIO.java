@@ -1,6 +1,7 @@
 package edu.rmit;
 
 import org.neo4j.cypher.CypherException;
+import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
@@ -44,13 +45,24 @@ public class EnronIO {
 	}
 
 
-	public String runCypherQuery(String query) {
+	public ExecutionResult runCypherQuery(String query) {
 		try {
-			return ex.execute(query).dumpToString();
+			return ex.execute(query);
 		}
 		catch(CypherException e) {
 			System.err.println("Invalid Cypher query: " + query);
 			e.printStackTrace();
+			return null;
+		}
+	}
+
+
+	public String runCypherQueryToString(String query) {
+		ExecutionResult res = runCypherQuery(query);
+		if(res != null) {
+			return res.dumpToString();
+		}
+		else {
 			return "";
 		}
 	}

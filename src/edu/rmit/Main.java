@@ -24,7 +24,7 @@ public class Main {
 	    while(!line.toLowerCase().equals("quit")) {
 		    line = getInputFromPrompt(in);
 		    if(!line.toLowerCase().equals("quit")) {
-		        String res = eio.runCypherQuery(line);
+		        String res = eio.runCypherQueryToString(line);
 		        System.out.println(res);
 		    }
 	    }
