@@ -9,21 +9,20 @@ public class Main {
     public static void main(String[] args) {
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	    EnronIO eio = new EnronIO("target");
+		EnronScanStatistics ss = new EnronScanStatistics();
 	    String line = "";
 
-        System.out.println("Reload Enron Data Set?");
-	    line = getInputFromPrompt(in).toLowerCase();
-		if(line.equals("yes") || line.equals("y")) {
-			eio.loadEnronDataSet();
-		}
-
-	    System.out.println("Enter Cypher queries to interact with the database, e.g.");
-	    System.out.println("\"start n=node(*) return count(n)\"\n");
 	    System.out.println("Enter \"quit\" to quit\n");
 
-	    while(!line.toLowerCase().equals("quit")) {
-		    line = getInputFromPrompt(in);
-		    if(!line.toLowerCase().equals("quit")) {
+	    while(!line.equals("quit")) {
+		    line = getInputFromPrompt(in).toLowerCase();
+			if(line.equals("load")) {
+				eio.loadEnronDataSet();
+			}
+			else if(line.equals("ss-degree")) {
+				ss.addTimeStep(eio.generateSubgraphsForWeek(2, 1));
+			}
+			else if(!line.equals("quit")) {
 		        String res = eio.runCypherQueryToString(line);
 		        System.out.println(res);
 		    }

@@ -11,9 +11,16 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,6 +31,9 @@ import java.util.Map;
  */
 
 public class EnronIO {
+	private static final SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+	private static final GregorianCalendar calendar = new GregorianCalendar();
+	
 	private String dbPath;
 	private String workingDirectory;
 	private GraphDatabaseService neo4jDB;
@@ -44,7 +54,30 @@ public class EnronIO {
 		ex = new ExecutionEngine(neo4jDB);
 	}
 
+	public Map generateSubgraphsForWeek(int week, int k) {
+		HashMap<Integer, LinkedList> subgraphs = new HashMap<Integer, LinkedList>();
+		ExecutionResult result = runCypherQuery(
+				"match (n)-[r]->(m) where r.time = " + week +
+				"return n.id as from, m.id as to, r.time as time, " +
+				"r.length as length order by n.id limit 10");
+		//System.out.println(result.dumpToString());
+		//Go through each row in the result set
+		for(Map<String, Object> row: result) {
+			System.out.println(row);
+			Integer fromID = Integer.valueOf((int)row.get("from"));
+			//If the base node has not been added to the map
+			if(subgraphs.get(fromID) == null) {
+				subgraphs.put(fromID, new LinkedList<String>());
+			}
+			
+			//Add the neighbour as a node in the subgraph
+			subgraphs.get(fromID).add(Integer.valueOf((int)row.get("to")));
+			System.out.println(subgraphs.get(fromID));
+		}
+		return subgraphs;
+	}
 
+	
 	public ExecutionResult runCypherQuery(String query) {
 		try {
 			return ex.execute(query);
@@ -74,7 +107,6 @@ public class EnronIO {
 
 
 	public void loadEnronDataSet() {
-		List<EnronEmail> entries = this.readFromCSV("data/mid_from_to_date_len.txt");
 		UniqueFactory<Node> factory;
 
 		Transaction tx = neo4jDB.beginTx();
@@ -90,6 +122,7 @@ public class EnronIO {
 			tx.finish();
 		}
 
+		List<EnronEmail> entries = this.readFromCSV("data/mid_from_to_date_len.txt");
 		for(EnronEmail email: entries) {
 			addEmail(factory, email);
 		}
@@ -103,13 +136,12 @@ public class EnronIO {
 		Transaction tx = neo4jDB.beginTx();
 		try {
 			//Create the from and to nodes if they don't already exist
-			fromEmp = factory.getOrCreate("id", email.to);
-			toEmp = factory.getOrCreate("id", email.from);
+			fromEmp = factory.getOrCreate("id", email.toID);
+			toEmp = factory.getOrCreate("id", email.fromID);
 
 			//Create a relationship between the nodes representing the email
 			rel = fromEmp.createRelationshipTo(toEmp, RelTypes.EMAILED);
-			rel.setProperty("date", email.sendDate);
-			rel.setProperty("time", email.sendTime);
+			rel.setProperty("time", email.timeSent);
 			rel.setProperty("length", email.length);
 
 			tx.success();
@@ -123,10 +155,20 @@ public class EnronIO {
 	private LinkedList<EnronEmail> readFromCSV(String filename) {
 		LinkedList<EnronEmail> entries = new LinkedList<EnronEmail>();
 		String line;
-
+		
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(filename));
-			while((line = br.readLine()) != null) entries.add(new EnronEmail(line.split(",")));
+			while((line = br.readLine()) != null) {
+				String[] fields = line.split(",");
+				entries.add(new EnronEmail(
+						Integer.parseInt(fields[0]),
+						Integer.parseInt(fields[1]),
+						Integer.parseInt(fields[2]),
+						dateToInt(parseDate(fields[3])),
+						Integer.parseInt(fields[5])));
+
+				//if(entries.size() > 50) break;
+			}
 			br.close();
 		}
 		catch(FileNotFoundException e) {
@@ -137,5 +179,29 @@ public class EnronIO {
 		}
 
 		return entries;
+	}
+
+	
+	private static int dateToInt(Date date) {
+		int week = 0;
+		calendar.setTime(parseDate("1999-05-11"));
+		while(calendar.getTime().before(date)) {
+			calendar.add(GregorianCalendar.DATE, 7);
+			week++;
+		}
+
+		return week;
+	}
+	
+	
+	private static Date parseDate(String dateString) {
+		try {
+			return dateFormatter.parse(dateString);
+		}
+		catch(ParseException e) {
+			System.err.println("Date string " + dateString +
+					" is not in the correct format - yyyy-mm-dd");
+			return null;
+		}
 	}
 }
