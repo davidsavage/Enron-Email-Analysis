@@ -53,7 +53,7 @@ public class EnronIO {
 		//Instantiate the Cypher execution engine
 		ex = new ExecutionEngine(neo4jDB);
 	}
-
+	
 	public Map generateSubgraphsForWeek(int week, int k) {
 		HashMap<Integer, LinkedList> subgraphs = new HashMap<Integer, LinkedList>();
 		ExecutionResult result = runCypherQuery(
@@ -63,7 +63,6 @@ public class EnronIO {
 		//System.out.println(result.dumpToString());
 		//Go through each row in the result set
 		for(Map<String, Object> row: result) {
-			System.out.println(row);
 			Integer fromID = Integer.valueOf((int)row.get("from"));
 			//If the base node has not been added to the map
 			if(subgraphs.get(fromID) == null) {
@@ -72,7 +71,6 @@ public class EnronIO {
 			
 			//Add the neighbour as a node in the subgraph
 			subgraphs.get(fromID).add(Integer.valueOf((int)row.get("to")));
-			System.out.println(subgraphs.get(fromID));
 		}
 		return subgraphs;
 	}
@@ -181,6 +179,12 @@ public class EnronIO {
 		return entries;
 	}
 
+	public static void printBars(List<Double> list) {
+		for(Double v: list) {
+			for(int i = 0;i < Math.ceil(v / 0.5);i++) System.out.print("*");
+			System.out.println();
+		}
+	}
 	
 	private static int dateToInt(Date date) {
 		int week = 0;
