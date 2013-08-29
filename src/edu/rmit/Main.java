@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) {
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	    EnronIO eio = new EnronIO("target");
-		EnronScanStatistics ss = new EnronScanStatistics();
+		EnronScanStatistics ss = new EnronScanStatistics(163);
 	    String line = "";
 
 	    System.out.println("Enter \"quit\" to quit\n");
@@ -20,7 +20,10 @@ public class Main {
 				eio.loadEnronDataSet();
 			}
 			else if(line.equals("ss-degree")) {
-				ss.addTimeStep(eio.generateSubgraphsForWeek(2, 1));
+				for(int i = 2;i < 150;i++) {
+					ss.addTimeStep(eio.generateSubgraphsForWeek(i, 1));
+				}
+				EnronIO.printBars(ss.getScanStatistic());
 			}
 			else if(!line.equals("quit")) {
 		        String res = eio.runCypherQueryToString(line);
