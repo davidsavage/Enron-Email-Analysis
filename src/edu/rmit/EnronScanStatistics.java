@@ -17,6 +17,8 @@ import java.util.Vector;
  * @author e10483
  */
 public class EnronScanStatistics {
+	private static final int tau = 20;
+
 	//List of lists to hold the statistic for each vertex
 	private HashMap<Integer, int[]> degree;
 	private LinkedList<Double> scanStatistic;
@@ -31,7 +33,6 @@ public class EnronScanStatistics {
 	public void addTimeStep(Map<Integer, List> subgraphs) {
 		double vdm, vdv, maxSS = 0.0;
 		int currDegree;
-		int tau = 5;
 		
 		int currWeek = scanStatistic.size();
 
@@ -66,7 +67,8 @@ public class EnronScanStatistics {
 		
 		return summation / (double)tau;
 	}
-	
+
+
 	public double vertexDependentVariance(int t, int tau, double vertexDependentMean, int[] rawStatistic) {
 		double summation = 0;
 		

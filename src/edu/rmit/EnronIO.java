@@ -11,6 +11,7 @@ import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -59,18 +60,18 @@ public class EnronIO {
 		ExecutionResult result = runCypherQuery(
 				"match (n)-[r]->(m) where r.time = " + week +
 				"return n.id as from, m.id as to, r.time as time, " +
-				"r.length as length order by n.id limit 10");
-		//System.out.println(result.dumpToString());
+				"r.length as length order by n.id");
+
 		//Go through each row in the result set
 		for(Map<String, Object> row: result) {
-			Integer fromID = Integer.valueOf((int)row.get("from"));
+			Integer fromID = (Integer)row.get("from");//Integer.valueOf((int)row.get("from"));
 			//If the base node has not been added to the map
 			if(subgraphs.get(fromID) == null) {
 				subgraphs.put(fromID, new LinkedList<String>());
 			}
 			
 			//Add the neighbour as a node in the subgraph
-			subgraphs.get(fromID).add(Integer.valueOf((int)row.get("to")));
+			subgraphs.get(fromID).add((Integer)row.get("to"));
 		}
 		return subgraphs;
 	}
@@ -105,6 +106,9 @@ public class EnronIO {
 
 
 	public void loadEnronDataSet() {
+		//String enronFile = "data/mid_from_to_date_len.txt";
+		String enronFile = "data/time_from_to.csv";
+
 		UniqueFactory<Node> factory;
 
 		Transaction tx = neo4jDB.beginTx();
@@ -120,7 +124,7 @@ public class EnronIO {
 			tx.finish();
 		}
 
-		List<EnronEmail> entries = this.readFromCSV("data/mid_from_to_date_len.txt");
+		List<EnronEmail> entries = this.readFromCSV(enronFile);
 		for(EnronEmail email: entries) {
 			addEmail(factory, email);
 		}
@@ -159,13 +163,18 @@ public class EnronIO {
 			while((line = br.readLine()) != null) {
 				String[] fields = line.split(",");
 				entries.add(new EnronEmail(
-						Integer.parseInt(fields[0]),
+						entries.size(),
+						Integer.parseInt(fields[2]),
+						Integer.parseInt(fields[1]),
+						dateToInt(parseDate(Integer.parseInt(fields[0]))),
+						0));
+						/*Integer.parseInt(fields[0]),
 						Integer.parseInt(fields[1]),
 						Integer.parseInt(fields[2]),
 						dateToInt(parseDate(fields[3])),
-						Integer.parseInt(fields[5])));
+						Integer.parseInt(fields[5])));*/
 
-				//if(entries.size() > 50) break;
+				//if(entries.size() > 200) break;
 			}
 			br.close();
 		}
@@ -180,15 +189,27 @@ public class EnronIO {
 	}
 
 	public static void printBars(List<Double> list) {
-		for(Double v: list) {
-			for(int i = 0;i < Math.ceil(v / 0.5);i++) System.out.print("*");
+		int maxHeight = 0;
+		for(Double v: list) maxHeight = Math.max(maxHeight, (int)Math.ceil(v / 0.5));
+
+		for(int i = 0;i <= maxHeight;i++)  {
+			System.out.print((maxHeight - i) + "\t");
+			for(Double v: list) {
+				int y = (int) Math.ceil(v / 0.5);
+				if(y >= maxHeight - i) {
+					System.out.print("*");
+				}
+				else {
+					System.out.print(" ");
+				}
+			}
 			System.out.println();
 		}
 	}
 	
 	private static int dateToInt(Date date) {
 		int week = 0;
-		calendar.setTime(parseDate("1999-05-11"));
+		calendar.setTime(parseDate("1998-01-11"));
 		while(calendar.getTime().before(date)) {
 			calendar.add(GregorianCalendar.DATE, 7);
 			week++;
@@ -207,5 +228,9 @@ public class EnronIO {
 					" is not in the correct format - yyyy-mm-dd");
 			return null;
 		}
+	}
+
+	private static Date parseDate(long seconds) {
+		return new Date((long)1000 * seconds);
 	}
 }
