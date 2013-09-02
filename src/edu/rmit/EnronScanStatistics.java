@@ -29,8 +29,10 @@ public class EnronScanStatistics {
 		scanStatistic = new LinkedList<Double>();
 		this.numWeeks = numWeeks;
 	}
-	
+
+
 	public void addTimeStep(Map<Integer, List> subgraphs) {
+		if(subgraphs == null) return;
 		double vdm, vdv, maxSS = 0.0;
 		int currDegree;
 		
@@ -57,6 +59,7 @@ public class EnronScanStatistics {
 		}
 		scanStatistic.add(maxSS);
 	}
+
 
 	public double vertexDependentMean(int t, int tau, int[] rawStatistic) {
 		double summation = 0;

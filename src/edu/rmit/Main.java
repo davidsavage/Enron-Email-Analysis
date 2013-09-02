@@ -20,7 +20,7 @@ public class Main {
 				eio.loadEnronDataSet();
 			}
 			else if(line.equals("ss-degree")) {
-				for(int i = 2;i < 150;i++) {
+				for(int i = 2;i < 3;i++) {
 					ss.addTimeStep(eio.generateSubgraphsForWeek(i, 1));
 				}
 				EnronIO.printBars(ss.getScanStatistic());

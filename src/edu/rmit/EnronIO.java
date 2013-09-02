@@ -7,21 +7,22 @@ import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.index.UniqueFactory;
 
+import cern.colt.matrix.DoubleMatrix2D;
+import cern.colt.matrix.impl.DenseDoubleMatrix2D;
+
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
-import java.math.BigInteger;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -56,24 +57,38 @@ public class EnronIO {
 	}
 	
 	public Map generateSubgraphsForWeek(int week, int k) {
-		HashMap<Integer, LinkedList> subgraphs = new HashMap<Integer, LinkedList>();
-		ExecutionResult result = runCypherQuery(
-				"match (n)-[r]->(m) where r.time = " + week +
-				"return n.id as from, m.id as to, r.time as time, " +
-				"r.length as length order by n.id");
+		LinkedList<LinkedList<Double>> subgraph;
+		HashMap<Integer, DoubleMatrix2D> subgraphs = new HashMap<Integer, DoubleMatrix2D>();
 
+		//Perform the cypher query. For each node n, we want to find all
+		//neighbours m, and any relationships between these neighbours
+		ExecutionResult result = runCypherQuery(
+				"MATCH (ego)-[r1]->(t1) WHERE r1.time = " + week +
+				" WITH ego, t1 MATCH p = (t1)-[r2?]->(t2)<-[r3]-(ego)" +
+				" WHERE r3.time = " + week + " AND r2.time = " + week +
+				" WITH ego.id AS ego, t1.id AS t1, t2.id AS t2, COUNT(p) as paths" +
+				" ORDER BY t2 RETURN ego, t1, COLLECT(paths) ORDER BY ego, t1");
+		return null;
+		/*
 		//Go through each row in the result set
 		for(Map<String, Object> row: result) {
-			Integer fromID = (Integer)row.get("from");//Integer.valueOf((int)row.get("from"));
-			//If the base node has not been added to the map
-			if(subgraphs.get(fromID) == null) {
-				subgraphs.put(fromID, new LinkedList<String>());
+			Integer fromID = (Integer)row.get("from");
+			//If the base node has not yet been added to the map
+			if(subgraphs.containsKey(fromID)) {
+
+			} else {
+				//We don't know the number of neighbouring nodes
+				//yet so we can't instantiate the matrix
+				subgraphs.put(fromID, null);
+				subgraph = new LinkedList<LinkedList<Double>>();
+				subgraph.add(new LinkedList<Double>());
+				subgraph.peekLast().add();
 			}
 			
 			//Add the neighbour as a node in the subgraph
 			subgraphs.get(fromID).add((Integer)row.get("to"));
 		}
-		return subgraphs;
+		return subgraphs;  */
 	}
 
 	
@@ -106,8 +121,8 @@ public class EnronIO {
 
 
 	public void loadEnronDataSet() {
-		//String enronFile = "data/mid_from_to_date_len.txt";
-		String enronFile = "data/time_from_to.csv";
+		String enronFile = "data/mid_from_to_date_len.csv";
+		//String enronFile = "data/time_from_to.csv";
 
 		UniqueFactory<Node> factory;
 
@@ -163,16 +178,16 @@ public class EnronIO {
 			while((line = br.readLine()) != null) {
 				String[] fields = line.split(",");
 				entries.add(new EnronEmail(
-						entries.size(),
+						/*entries.size(),
 						Integer.parseInt(fields[2]),
 						Integer.parseInt(fields[1]),
 						dateToInt(parseDate(Integer.parseInt(fields[0]))),
-						0));
-						/*Integer.parseInt(fields[0]),
+						0));*/
+						Integer.parseInt(fields[0]),
 						Integer.parseInt(fields[1]),
 						Integer.parseInt(fields[2]),
 						dateToInt(parseDate(fields[3])),
-						Integer.parseInt(fields[5])));*/
+						Integer.parseInt(fields[5])));
 
 				//if(entries.size() > 200) break;
 			}
@@ -187,6 +202,7 @@ public class EnronIO {
 
 		return entries;
 	}
+
 
 	public static void printBars(List<Double> list) {
 		int maxHeight = 0;
@@ -206,10 +222,11 @@ public class EnronIO {
 			System.out.println();
 		}
 	}
-	
+
+
 	private static int dateToInt(Date date) {
 		int week = 0;
-		calendar.setTime(parseDate("1998-01-11"));
+		calendar.setTime(parseDate("1999-05-11"));
 		while(calendar.getTime().before(date)) {
 			calendar.add(GregorianCalendar.DATE, 7);
 			week++;
