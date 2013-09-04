@@ -22,7 +22,7 @@ public class Main {
 				graph = new EnronEmailGraph(eio.loadEnronDataSet());
 			}
 			else if(line.equals("ss") && graph != null) {
-				for(int i = 2;i < 140;i++) {
+				for(int i = 2;i < 150;i++) {
 					ss.addTimeStep(graph.generateSubgraphsForWeek(i, 1));
 				}
 				EnronIO.printBars(ss.getScanStatistic());
