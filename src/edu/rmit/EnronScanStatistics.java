@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import edu.uci.ics.jung.graph.Graph;
 
 /**
  *
@@ -31,7 +32,7 @@ public class EnronScanStatistics {
 	}
 
 
-	public void addTimeStep(Map<Integer, List> subgraphs) {
+	public void addTimeStep(Map<Integer, Graph<Integer, EnronEmail>> subgraphs) {
 		if(subgraphs == null) return;
 		double vdm, vdv, maxSS = 0.0;
 		int currDegree;
@@ -44,7 +45,7 @@ public class EnronScanStatistics {
 			if(degree.get(fromID) == null) degree.put(fromID, new int[numWeeks]);
 			
 			//Calculate the raw statistic and then store the value in the list associated with the current vertex
-			currDegree = subgraphs.get(fromID).size();
+			currDegree = subgraphs.get(fromID).getEdgeCount();
 			degree.get(fromID)[currWeek] = currDegree;
 			
 			if(currWeek - tau > 0) {

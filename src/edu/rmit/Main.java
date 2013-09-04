@@ -9,6 +9,8 @@ public class Main {
     public static void main(String[] args) {
 		BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	    EnronIO eio = new EnronIO("target");
+		EnronEmailGraph graph = null;
+
 		EnronScanStatistics ss = new EnronScanStatistics(163);
 	    String line = "";
 
@@ -17,21 +19,15 @@ public class Main {
 	    while(!line.equals("quit")) {
 		    line = getInputFromPrompt(in).toLowerCase();
 			if(line.equals("load")) {
-				eio.loadEnronDataSet();
+				graph = new EnronEmailGraph(eio.loadEnronDataSet());
 			}
-			else if(line.equals("ss-degree")) {
-				for(int i = 2;i < 3;i++) {
-					ss.addTimeStep(eio.generateSubgraphsForWeek(i, 1));
+			else if(line.equals("ss") && graph != null) {
+				for(int i = 2;i < 140;i++) {
+					ss.addTimeStep(graph.generateSubgraphsForWeek(i, 1));
 				}
 				EnronIO.printBars(ss.getScanStatistic());
 			}
-			else if(!line.equals("quit")) {
-		        String res = eio.runCypherQueryToString(line);
-		        System.out.println(res);
-		    }
 	    }
-
-	    eio.closeDBConnection();
     }
 
 
