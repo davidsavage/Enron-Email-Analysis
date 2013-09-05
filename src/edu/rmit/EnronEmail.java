@@ -19,11 +19,11 @@ public class EnronEmail {
 	public final int length;
 
 	public EnronEmail(int emailID,
-		int toID, int fromID, int timeSent, int length) {
+		int fromID, int toID, int timeSent, int length) {
 		
 		this.emailID = emailID;
-		this.toID = toID;
 		this.fromID = fromID;
+		this.toID = toID;
 		this.timeSent = timeSent;
 		this.length = length;
 	}

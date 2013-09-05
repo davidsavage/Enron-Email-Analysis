@@ -42,7 +42,7 @@ public class EnronEmailGraph {
 		for(Integer v: byWeek.getVertices()) {
 			//Find the k-induced subgraph
 			KNeighborhoodFilter<Integer, EnronEmail> kFilter =
-					new KNeighborhoodFilter<Integer, EnronEmail>(v, k, KNeighborhoodFilter.EdgeType.IN);
+					new KNeighborhoodFilter<Integer, EnronEmail>(v, k, KNeighborhoodFilter.EdgeType.OUT);
 
 			//Add the subgraph to the list
 			subgraphs.put(v, kFilter.transform(byWeek));

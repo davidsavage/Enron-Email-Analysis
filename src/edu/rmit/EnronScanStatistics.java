@@ -4,13 +4,8 @@
  */
 package edu.rmit;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Vector;
+import java.util.*;
+
 import edu.uci.ics.jung.graph.Graph;
 
 /**
@@ -21,19 +16,21 @@ public class EnronScanStatistics {
 	private static final int tau = 20;
 
 	//List of lists to hold the statistic for each vertex
-	private HashMap<Integer, int[]> degree;
+	private HashMap<Integer, Double[]> degree;
 	private LinkedList<Double> scanStatistic;
+	private LinkedList<Double> normalisedScanStatistic;
 	private int numWeeks;
-	
+
+
 	public EnronScanStatistics(int numWeeks) {
-		degree = new HashMap<Integer, int[]>();
+		degree = new HashMap<Integer, Double[]>();
 		scanStatistic = new LinkedList<Double>();
+		normalisedScanStatistic = new LinkedList<Double>();
 		this.numWeeks = numWeeks;
 	}
 
 
 	public void addTimeStep(Map<Integer, Graph<Integer, EnronEmail>> subgraphs) {
-		if(subgraphs == null) return;
 		double vdm, vdv, maxSS = 0.0;
 		int currDegree;
 		
@@ -41,28 +38,38 @@ public class EnronScanStatistics {
 
 		//Go through each vertex in the graph
 		for(Integer fromID: subgraphs.keySet()) {
-			//if this is the first time this vertex has been seen, create a new entry in the hash table and initialise
-			if(degree.get(fromID) == null) degree.put(fromID, new int[numWeeks]);
-			
-			//Calculate the raw statistic and then store the value in the list associated with the current vertex
+			//if this is the first time this vertex has been seen,
+			//create a new entry in the hash table and initialise
+			if(!degree.containsKey(fromID)) {
+				degree.put(fromID, new Double[numWeeks]);
+			}
+
+			//Calculate the raw statistic and store in the array associated with the current vertex
 			currDegree = subgraphs.get(fromID).getEdgeCount();
-			degree.get(fromID)[currWeek] = currDegree;
-			
-			if(currWeek - tau > 0) {
-				//Standardise the statistic
-				vdm = vertexDependentMean(currWeek, tau, degree.get(fromID));
-				vdv = Math.max(1.0, vertexDependentVariance(currWeek, tau, vdm, degree.get(fromID)));
-				maxSS = Math.max(maxSS, (currDegree - vdm) / vdv);
+			degree.get(fromID)[currWeek] = Double.valueOf((double)currDegree);
+
+
+			if(currWeek - tau >= 0) {
+				//Standardise the statistic (eq. 6 - 8) and take the maximum value across all nodes
+				maxSS = Math.max(maxSS, standardise(currWeek, tau, degree.get(fromID)));
 			}
 			else {
 				maxSS = Math.max(maxSS, currDegree);
 			}
 		}
+
 		scanStatistic.add(maxSS);
 	}
 
 
-	public double vertexDependentMean(int t, int tau, int[] rawStatistic) {
+	public double standardise(int t, int tau, Double[] rawStatistic) {
+		double rmean = runningMean(t, tau, rawStatistic);
+		double rvar = Math.max(1.0, runningVariance(t, tau, rmean, rawStatistic));
+		return (rawStatistic[t] - rmean) / Math.max(1.0, Math.sqrt(rvar));
+	}
+
+
+	public double runningMean(int t, int tau, Double[] rawStatistic) {
 		double summation = 0;
 		
 		for(int i = t - tau;i < t;i++) {
@@ -73,16 +80,28 @@ public class EnronScanStatistics {
 	}
 
 
-	public double vertexDependentVariance(int t, int tau, double vertexDependentMean, int[] rawStatistic) {
+	public double runningVariance(int t, int tau, double runningMean, Double[] rawStatistic) {
 		double summation = 0;
 		
 		for(int i = t - tau;i < t;i++) {
-			summation += Math.pow((double)rawStatistic[i] - vertexDependentMean, 2);
+			summation += Math.pow((double)rawStatistic[i] - runningMean, 2);
 		}
 		
 		return summation / (double)(tau - 1);
 	}
-	
+
+	public List<Double> getNormalisedScanStatistic(int tau) {
+		LinkedList<Double> norm = new LinkedList<Double>();
+		Double[] ssArray = new Double[scanStatistic.size()];
+		scanStatistic.toArray(ssArray);
+
+		for(int t = tau; t < ssArray.length;t++) {
+			norm.add(standardise(t, tau, ssArray));
+		}
+
+		return norm;
+	}
+
 	public List getScanStatistic() {
 		return scanStatistic;
 	}

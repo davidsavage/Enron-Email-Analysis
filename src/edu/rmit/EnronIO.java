@@ -1,23 +1,26 @@
 package edu.rmit;
 
-import cern.colt.matrix.DoubleMatrix2D;
-import cern.colt.matrix.impl.DenseDoubleMatrix2D;
-
+import de.erichseifert.gral.ui.InteractivePanel;
+import de.erichseifert.gral.util.Insets2D;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
+import de.erichseifert.gral.plots.XYPlot;
+import de.erichseifert.gral.data.DataTable;
+import de.erichseifert.gral.plots.lines.DefaultLineRenderer2D;
+
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import java.awt.*;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.LinkedList;
-import java.util.Map;
 
 
 /**
@@ -52,7 +55,7 @@ public class EnronIO {
 			graph.addVertex(email.toID);
 			graph.addEdge(email, email.fromID, email.toID);
 		}
-
+		System.out.println(graph.outDegree(127));
 		return graph;
 	}
 
@@ -60,7 +63,7 @@ public class EnronIO {
 	private LinkedList<EnronEmail> readFromCSV(String filename) {
 		LinkedList<EnronEmail> entries = new LinkedList<EnronEmail>();
 		String line;
-		
+
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(filename));
 			while((line = br.readLine()) != null) {
@@ -89,6 +92,45 @@ public class EnronIO {
 		}
 
 		return entries;
+	}
+
+
+	public static void displayAsLinePlot(List<List> series, String title) {
+		JFrame frame = new JFrame(title);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setSize(600, 400);
+
+		LinkedList<DataTable> dataTables = new LinkedList<DataTable>();
+
+		for(List<Double> s: series) {
+			ListIterator<Double> iter = s.listIterator();
+			DataTable data = new DataTable(Integer.class, Double.class);
+			while(iter.hasNext()) {
+				data.add(iter.nextIndex(), iter.next());
+			}
+			dataTables.add(data);
+		}
+
+		//DataSeries series1 = new DataSeries(data1, 0, 1);
+		//DataSeries series2 = new DataSeries(data2, 0, 1);
+
+		XYPlot plot = new XYPlot(dataTables.getFirst(), dataTables.getLast());
+		plot.setInsets(new Insets2D.Double(20.0, 40.0, 40.0, 40.0));
+
+		//Plot the lines as different colours
+		formatLine(plot, dataTables.getFirst(), Color.RED);
+		formatLine(plot, dataTables.getLast(), Color.BLUE);
+
+		frame.getContentPane().add(new InteractivePanel(plot));
+		frame.setVisible(true);
+	}
+
+
+	private static void formatLine(XYPlot plot, DataTable table, Color color) {
+		plot.setPointRenderer(table, null);
+		DefaultLineRenderer2D line = new DefaultLineRenderer2D();
+		line.setSetting(DefaultLineRenderer2D.COLOR, color);
+		plot.setLineRenderer(table, line);
 	}
 
 
