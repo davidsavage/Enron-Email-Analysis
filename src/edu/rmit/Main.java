@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
 
@@ -23,36 +24,34 @@ public class Main {
 				graph = new EnronEmailGraph(eio.loadEnronDataSet());
 			}
 			else if(line.equals("ss-norm") && graph != null) {
-				List<List> ss = getScanStatistics(graph, true);
+				List<double[]> ss = getScanStatistics(graph, true);
 				EnronIO.displayAsLinePlot(ss, "Normalised Scan Statistics");
 			}
 			else if(line.equals("ss") && graph != null) {
-				List<List> ss = getScanStatistics(graph, false);
+				List<double[]> ss = getScanStatistics(graph, false);
 				EnronIO.displayAsLinePlot(ss, "Scan Statistics");
 			}
 	    }
     }
 
-	public static List<List> getScanStatistics(EnronEmailGraph graph, boolean normalised) {
-		EnronScanStatistics ss1 = new EnronScanStatistics(163);
-		EnronScanStatistics ss2 = new EnronScanStatistics(163);
+	public static List<double[]> getScanStatistics(EnronEmailGraph graph, boolean normalised) {
+		EnronScanStatistics[] ss = new EnronScanStatistics[5];
+		for(int i = 0;i < ss.length;i++) ss[i] = new EnronScanStatistics(163);
 
 		for(int i = 2;i < 163;i++) {
-			ss1.addTimeStep(graph.generateSubgraphsForWeek(i, 1));
-			ss2.addTimeStep(graph.generateSubgraphsForWeek(i, 2));
+			Map<Integer, Double>[] vals = graph.getGraphPropertiesForWeek(i);
+			for(int j = 0;j < ss.length;j++) ss[j].addTimeStep(vals[j]);
 		}
 
-		LinkedList<List> ss = new LinkedList<List>();
+		LinkedList<double[]> allSS = new LinkedList<double[]>();
 		if(normalised) {
-			ss.add(ss1.getNormalisedScanStatistic(20));
-			ss.add(ss2.getNormalisedScanStatistic(20));
+			for(int i = 0;i < ss.length;i++) allSS.add(ss[i].getNormalisedScanStatistic(20));
 		}
 		else {
-			ss.add(ss1.getScanStatistic());
-			ss.add(ss2.getScanStatistic());
+			for(int i = 0;i < ss.length;i++) allSS.add(ss[i].getScanStatistic());
 		}
 
-		return ss;
+		return allSS;
 	}
 
 

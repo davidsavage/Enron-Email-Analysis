@@ -16,60 +16,56 @@ public class EnronScanStatistics {
 	private static final int tau = 20;
 
 	//List of lists to hold the statistic for each vertex
-	private HashMap<Integer, Double[]> degree;
-	private LinkedList<Double> scanStatistic;
-	private LinkedList<Double> normalisedScanStatistic;
-	private int numWeeks;
+	private HashMap<Integer, double[]> rawStatistic;
+	private double[] scanStatistic;
+	private double[] normalisedScanStatistic;
+	private int timeStep;
 
 
 	public EnronScanStatistics(int numWeeks) {
-		degree = new HashMap<Integer, Double[]>();
-		scanStatistic = new LinkedList<Double>();
-		normalisedScanStatistic = new LinkedList<Double>();
-		this.numWeeks = numWeeks;
+		rawStatistic = new HashMap<Integer, double[]>();
+		scanStatistic = new double[numWeeks];
+		normalisedScanStatistic = new double[numWeeks];
+		timeStep = 0;
 	}
 
 
-	public void addTimeStep(Map<Integer, Graph<Integer, EnronEmail>> subgraphs) {
-		double vdm, vdv, maxSS = 0.0;
-		int currDegree;
-		
-		int currWeek = scanStatistic.size();
+	public void addTimeStep(Map<Integer, Double> vals) {
+		double maxSS = 0.0;
 
 		//Go through each vertex in the graph
-		for(Integer fromID: subgraphs.keySet()) {
+		for(Integer fromID: vals.keySet()) {
 			//if this is the first time this vertex has been seen,
 			//create a new entry in the hash table and initialise
-			if(!degree.containsKey(fromID)) {
-				degree.put(fromID, new Double[numWeeks]);
+			if(!rawStatistic.containsKey(fromID)) {
+				rawStatistic.put(fromID, new double[scanStatistic.length]);
 			}
 
 			//Calculate the raw statistic and store in the array associated with the current vertex
-			currDegree = subgraphs.get(fromID).getEdgeCount();
-			degree.get(fromID)[currWeek] = Double.valueOf((double)currDegree);
+			rawStatistic.get(fromID)[timeStep] = vals.get(fromID);
 
-
-			if(currWeek - tau >= 0) {
+			if(timeStep - tau >= 0) {
 				//Standardise the statistic (eq. 6 - 8) and take the maximum value across all nodes
-				maxSS = Math.max(maxSS, standardise(currWeek, tau, degree.get(fromID)));
+				maxSS = Math.max(maxSS, standardise(timeStep, tau, rawStatistic.get(fromID)));
 			}
 			else {
-				maxSS = Math.max(maxSS, currDegree);
+				maxSS = Math.max(maxSS, rawStatistic.get(fromID)[timeStep]);
 			}
 		}
 
-		scanStatistic.add(maxSS);
+		scanStatistic[timeStep] = maxSS;
+		timeStep++;
 	}
 
 
-	public double standardise(int t, int tau, Double[] rawStatistic) {
+	public double standardise(int t, int tau, double[] rawStatistic) {
 		double rmean = runningMean(t, tau, rawStatistic);
 		double rvar = Math.max(1.0, runningVariance(t, tau, rmean, rawStatistic));
 		return (rawStatistic[t] - rmean) / Math.max(1.0, Math.sqrt(rvar));
 	}
 
 
-	public double runningMean(int t, int tau, Double[] rawStatistic) {
+	public double runningMean(int t, int tau, double[] rawStatistic) {
 		double summation = 0;
 		
 		for(int i = t - tau;i < t;i++) {
@@ -80,7 +76,7 @@ public class EnronScanStatistics {
 	}
 
 
-	public double runningVariance(int t, int tau, double runningMean, Double[] rawStatistic) {
+	public double runningVariance(int t, int tau, double runningMean, double[] rawStatistic) {
 		double summation = 0;
 		
 		for(int i = t - tau;i < t;i++) {
@@ -90,19 +86,18 @@ public class EnronScanStatistics {
 		return summation / (double)(tau - 1);
 	}
 
-	public List<Double> getNormalisedScanStatistic(int tau) {
-		LinkedList<Double> norm = new LinkedList<Double>();
-		Double[] ssArray = new Double[scanStatistic.size()];
-		scanStatistic.toArray(ssArray);
 
-		for(int t = tau; t < ssArray.length;t++) {
-			norm.add(standardise(t, tau, ssArray));
+	public double[] getNormalisedScanStatistic(int tau) {
+		double[] norm = new double[scanStatistic.length];
+
+		for(int t = tau; t < scanStatistic.length;t++) {
+			norm[t] = standardise(t, tau, scanStatistic);
 		}
 
 		return norm;
 	}
 
-	public List getScanStatistic() {
+	public double[] getScanStatistic() {
 		return scanStatistic;
 	}
 }

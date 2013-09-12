@@ -51,6 +51,26 @@ public class EnronEmailGraph {
 		return subgraphs;
 	}
 
+
+	public Map<Integer, Double>[] getGraphPropertiesForWeek(int week) {
+		Map<Integer, Double>[] props = new HashMap[5];
+		for(int i = 0;i < props.length;i++) props[i] = new HashMap<Integer, Double>();
+
+		//Get the k-induced subgraphs
+		Map<Integer, Graph<Integer, EnronEmail>> subgraphs = generateSubgraphsForWeek(week, 1);
+		for(Integer v: subgraphs.keySet()) {
+			props[0].put(v, (double) subgraphs.get(v).getEdgeCount());
+			props[1].put(v, (double) subgraphs.get(v).getVertexCount());
+		}
+
+		subgraphs = generateSubgraphsForWeek(week, 2);
+		for(Integer v: subgraphs.keySet()) {
+			props[2].put(v, (double) subgraphs.get(v).getEdgeCount());
+		}
+
+		return props;
+	}
+
 	
 	private class TimePredicate<T> implements Predicate<T> {
 		private int time;

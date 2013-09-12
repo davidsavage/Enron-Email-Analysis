@@ -95,18 +95,17 @@ public class EnronIO {
 	}
 
 
-	public static void displayAsLinePlot(List<List> series, String title) {
+	public static void displayAsLinePlot(List<double[]> series, String title) {
 		JFrame frame = new JFrame(title);
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setSize(600, 400);
 
 		LinkedList<DataTable> dataTables = new LinkedList<DataTable>();
 
-		for(List<Double> s: series) {
-			ListIterator<Double> iter = s.listIterator();
+		for(double[] s: series) {
 			DataTable data = new DataTable(Integer.class, Double.class);
-			while(iter.hasNext()) {
-				data.add(iter.nextIndex(), iter.next());
+			for(int i = 0;i < s.length;i++) {
+				data.add(i, s[i]);
 			}
 			dataTables.add(data);
 		}
@@ -114,12 +113,13 @@ public class EnronIO {
 		//DataSeries series1 = new DataSeries(data1, 0, 1);
 		//DataSeries series2 = new DataSeries(data2, 0, 1);
 
-		XYPlot plot = new XYPlot(dataTables.getFirst(), dataTables.getLast());
+		XYPlot plot = new XYPlot(dataTables.get(0), dataTables.get(1), dataTables.get(2));
 		plot.setInsets(new Insets2D.Double(20.0, 40.0, 40.0, 40.0));
 
 		//Plot the lines as different colours
-		formatLine(plot, dataTables.getFirst(), Color.RED);
-		formatLine(plot, dataTables.getLast(), Color.BLUE);
+		formatLine(plot, dataTables.get(0), Color.RED);
+		formatLine(plot, dataTables.get(1), Color.BLUE);
+		formatLine(plot, dataTables.get(2), Color.GREEN);
 
 		frame.getContentPane().add(new InteractivePanel(plot));
 		frame.setVisible(true);
