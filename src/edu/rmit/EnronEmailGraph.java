@@ -10,6 +10,8 @@ package edu.rmit;
 
 import edu.uci.ics.jung.graph.Graph;
 import edu.uci.ics.jung.graph.DirectedGraph;
+import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
+import edu.uci.ics.jung.algorithms.importance.BetweennessCentrality;
 import edu.uci.ics.jung.algorithms.filters.KNeighborhoodFilter;
 import edu.uci.ics.jung.algorithms.filters.EdgePredicateFilter;
 import org.apache.commons.collections15.Predicate;
@@ -52,6 +54,22 @@ public class EnronEmailGraph {
 	}
 
 
+    public double averageBetweenessConnectivity(Integer ego, Graph<Integer, EnronEmail> subgraph) {
+        DijkstraShortestPath path = new DijkstraShortestPath(subgraph);
+        int abc = 0;
+
+        for(Integer n1: subgraph.getVertices()) {
+            for(Integer n2: subgraph.getVertices()) {
+                for(Object email: path.getPath(n1, n2)) {
+                    if(((EnronEmail)email).fromID == ego) abc++;
+                }
+            }
+        }
+
+        return (double) abc;
+    }
+
+
 	public Map<Integer, Double>[] getGraphPropertiesForWeek(int week) {
 		Map<Integer, Double>[] props = new HashMap[5];
 		for(int i = 0;i < props.length;i++) props[i] = new HashMap<Integer, Double>();
@@ -66,6 +84,7 @@ public class EnronEmailGraph {
 		subgraphs = generateSubgraphsForWeek(week, 2);
 		for(Integer v: subgraphs.keySet()) {
 			props[2].put(v, (double) subgraphs.get(v).getEdgeCount());
+            props[3].put(v, averageBetweenessConnectivity(v, subgraphs.get(v)));
 		}
 
 		return props;

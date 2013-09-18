@@ -38,7 +38,7 @@ public class Main {
 		EnronScanStatistics[] ss = new EnronScanStatistics[5];
 		for(int i = 0;i < ss.length;i++) ss[i] = new EnronScanStatistics(163);
 
-		for(int i = 2;i < 163;i++) {
+		for(int i = 2;i < 163;i++) {//163
 			Map<Integer, Double>[] vals = graph.getGraphPropertiesForWeek(i);
 			for(int j = 0;j < ss.length;j++) ss[j].addTimeStep(vals[j]);
 		}

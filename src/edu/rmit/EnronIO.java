@@ -113,13 +113,20 @@ public class EnronIO {
 		//DataSeries series1 = new DataSeries(data1, 0, 1);
 		//DataSeries series2 = new DataSeries(data2, 0, 1);
 
-		XYPlot plot = new XYPlot(dataTables.get(0), dataTables.get(1), dataTables.get(2));
-		plot.setInsets(new Insets2D.Double(20.0, 40.0, 40.0, 40.0));
+		XYPlot plot = new XYPlot();
+        for(DataTable table: dataTables) {
+            plot.add(table);
+            //dataTables.get(0), dataTables.get(1), dataTables.get(2), dataTables.get(3)
+        }
+
+        plot.setInsets(new Insets2D.Double(20.0, 40.0, 40.0, 40.0));
 
 		//Plot the lines as different colours
 		formatLine(plot, dataTables.get(0), Color.RED);
 		formatLine(plot, dataTables.get(1), Color.BLUE);
 		formatLine(plot, dataTables.get(2), Color.GREEN);
+        formatLine(plot, dataTables.get(3), Color.PINK);
+        formatLine(plot, dataTables.get(4), Color.DARK_GRAY);
 
 		frame.getContentPane().add(new InteractivePanel(plot));
 		frame.setVisible(true);
